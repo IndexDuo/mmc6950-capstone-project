@@ -1,231 +1,130 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
+import { SectionHeader } from "@/components/SectionHeader";
+import { ContributionCard } from "@/components/ContributionCard";
+import { useFireData } from "@/hooks/useFireData";
 
 const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 
-const DEFAULT_HOLDINGS = [
-    { id: "1", symbol: "VTI", shares: "10", targetPercent: "50" },
-    { id: "2", symbol: "QQQ", shares: "5", targetPercent: "30" },
-    { id: "3", symbol: "VXUS", shares: "8", targetPercent: "20" },
-];
+export default function Dashboard() {
+    const {
+        payAmount,
+        rentPerPaycheck,
+        groceryPerPaycheck,
+        vehiclePerPaycheck,
+        parkingPerPaycheck,
+        otherSpendingAPerPaycheck,
+        otherSpendingBPerPaycheck,
+        totalExpensesPerPaycheck,
+        amountLeft,
+        holdings,
+    } = useFireData();
 
-function paychecksPerYear(frequency) {
-    if (frequency === "weekly") return 52;
-    if (frequency === "biweekly") return 26;
-    if (frequency === "monthly") return 12;
-    return 1;
-}
-
-function expensePerPaycheck(amount, expenseFrequency, paycheckFrequency) {
-    const amt = Number(amount) || 0;
-    const paychecks = paychecksPerYear(paycheckFrequency);
-    let annual;
-    if (expenseFrequency === "weekly") annual = amt * 52;
-    else if (expenseFrequency === "biweekly") annual = amt * 26;
-    else if (expenseFrequency === "monthly") annual = amt * 12;
-    else if (expenseFrequency === "biannually") annual = amt * 2;
-    else if (expenseFrequency === "annually") annual = amt;
-    else annual = amt * 12;
-    return annual / paychecks;
-}
-
-export default function Home() {
     const [prices, setPrices] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
-    const [portfolioHoldings, setPortfolioHoldings] =
-        useState(DEFAULT_HOLDINGS);
-
-    const [payAmount, setPayAmount] = useState("0");
-    const [payFrequency, setPayFrequency] = useState("biweekly");
-    const [rentAmount, setRentAmount] = useState("0");
-    const [rentFrequency, setRentFrequency] = useState("monthly");
-    const [groceryAmount, setGroceryAmount] = useState("0");
-    const [groceryFrequency, setGroceryFrequency] = useState("monthly");
-    const [vehicleAmount, setVehicleAmount] = useState("0");
-    const [vehicleFrequency, setVehicleFrequency] = useState("monthly");
-    const [parkingAmount, setParkingAmount] = useState("0");
-    const [parkingFrequency, setParkingFrequency] = useState("monthly");
-    const [otherSpendingAAmount, setOtherSpendingAAmount] = useState("0");
-    const [otherSpendingAFrequency, setOtherSpendingAFrequency] =
-        useState("monthly");
-    const [otherSpendingBAmount, setOtherSpendingBAmount] = useState("0");
-    const [otherSpendingBFrequency, setOtherSpendingBFrequency] =
-        useState("monthly");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        document.title = "FIRE Tracker";
-
-        const cachedPrices = localStorage.getItem("poc_prices");
-        if (cachedPrices) {
-            const cachedPricesData = JSON.parse(cachedPrices);
-            if (Date.now() - cachedPricesData.savedAt < ONE_WEEK) {
-                setPrices(cachedPricesData.prices);
-                setLastUpdated(cachedPricesData.savedAt);
-            }
-        }
-
-        const savedInputs = localStorage.getItem("fire_inputs");
-        if (savedInputs) {
-            const data = JSON.parse(savedInputs);
-            setPayAmount(data.payAmount ?? "0");
-            setPayFrequency(data.payFrequency ?? "biweekly");
-            setRentAmount(data.rentAmount ?? "0");
-            setRentFrequency(data.rentFrequency ?? "monthly");
-            setGroceryAmount(data.groceryAmount ?? "0");
-            setGroceryFrequency(data.groceryFrequency ?? "monthly");
-            setVehicleAmount(data.vehicleAmount ?? "0");
-            setVehicleFrequency(data.vehicleFrequency ?? "monthly");
-            setParkingAmount(data.parkingAmount ?? "0");
-            setParkingFrequency(data.parkingFrequency ?? "monthly");
-            setOtherSpendingAAmount(data.otherSpendingAAmount ?? "0");
-            setOtherSpendingAFrequency(
-                data.otherSpendingAFrequency ?? "monthly",
-            );
-            setOtherSpendingBAmount(data.otherSpendingBAmount ?? "0");
-            setOtherSpendingBFrequency(
-                data.otherSpendingBFrequency ?? "monthly",
-            );
-            if (data.holdings && data.holdings.length > 0) {
-                setPortfolioHoldings(data.holdings);
-            }
+        const cached = localStorage.getItem("poc_prices");
+        if (!cached) return;
+        const data = JSON.parse(cached);
+        if (Date.now() - data.savedAt < ONE_WEEK) {
+            setPrices(data.prices);
+            setLastUpdated(data.savedAt);
         }
     }, []);
 
     async function loadPrices(forceRefresh) {
         if (!forceRefresh) {
-            const cachedPrices = localStorage.getItem("poc_prices");
-            if (cachedPrices) {
-                const cachedPricesData = JSON.parse(cachedPrices);
-                if (Date.now() - cachedPricesData.savedAt < ONE_WEEK) {
-                    setPrices(cachedPricesData.prices);
-                    setLastUpdated(cachedPricesData.savedAt);
+            const cached = localStorage.getItem("poc_prices");
+            if (cached) {
+                const data = JSON.parse(cached);
+                if (Date.now() - data.savedAt < ONE_WEEK) {
+                    setPrices(data.prices);
+                    setLastUpdated(data.savedAt);
                     return;
                 }
             }
         }
-
-        const response = await fetch("/api/prices", { cache: "no-store" });
-        const responseData = await response.json();
-
-        const savedAt = Date.now();
-        setPrices(responseData.prices);
-        setLastUpdated(savedAt);
-        localStorage.setItem(
-            "poc_prices",
-            JSON.stringify({
-                prices: responseData.prices,
-                savedAt,
-            }),
-        );
+        setLoading(true);
+        setError(null);
+        try {
+            const symbols = holdings
+                .map((h) => h.symbol.trim().toUpperCase())
+                .filter(Boolean)
+                .join(",");
+            if (!symbols) {
+                setError("Add at least one holding before loading prices.");
+                setLoading(false);
+                return;
+            }
+            const res = await fetch(
+                `/api/prices?symbols=${encodeURIComponent(symbols)}`,
+                { cache: "no-store" },
+            );
+            const resData = await res.json();
+            const savedAt = Date.now();
+            setPrices(resData.prices);
+            setLastUpdated(savedAt);
+            localStorage.setItem(
+                "poc_prices",
+                JSON.stringify({ prices: resData.prices, savedAt }),
+            );
+        } catch {
+            setError("Failed to fetch prices. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     }
-
-    const rentPerPaycheck = useMemo(() => {
-        return expensePerPaycheck(rentAmount, rentFrequency, payFrequency);
-    }, [rentAmount, rentFrequency, payFrequency]);
-
-    const totalExpensesPerPaycheck = useMemo(() => {
-        return (
-            expensePerPaycheck(rentAmount, rentFrequency, payFrequency) +
-            expensePerPaycheck(groceryAmount, groceryFrequency, payFrequency) +
-            expensePerPaycheck(vehicleAmount, vehicleFrequency, payFrequency) +
-            expensePerPaycheck(parkingAmount, parkingFrequency, payFrequency) +
-            expensePerPaycheck(
-                otherSpendingAAmount,
-                otherSpendingAFrequency,
-                payFrequency,
-            ) +
-            expensePerPaycheck(
-                otherSpendingBAmount,
-                otherSpendingBFrequency,
-                payFrequency,
-            )
-        );
-    }, [
-        rentAmount,
-        rentFrequency,
-        groceryAmount,
-        groceryFrequency,
-        vehicleAmount,
-        vehicleFrequency,
-        parkingAmount,
-        parkingFrequency,
-        otherSpendingAAmount,
-        otherSpendingAFrequency,
-        otherSpendingBAmount,
-        otherSpendingBFrequency,
-        payFrequency,
-    ]);
-
-    const amountLeft = useMemo(() => {
-        const payNumber = Number(payAmount) || 0;
-        return payNumber - totalExpensesPerPaycheck;
-    }, [payAmount, totalExpensesPerPaycheck]);
 
     const priceBySymbol = useMemo(() => prices || {}, [prices]);
 
-    const holdings = useMemo(() => {
-        return portfolioHoldings.map((h) => {
-            const sharesAmount = Number(h.shares) || 0;
-            const currentPrice =
-                priceBySymbol[h.symbol] == null
-                    ? 0
-                    : Number(priceBySymbol[h.symbol]) || 0;
-
+    const enrichedHoldings = useMemo(() => {
+        return holdings.map((h) => {
+            const shares = Number(h.shares) || 0;
+            const price =
+                priceBySymbol[h.symbol] != null
+                    ? Number(priceBySymbol[h.symbol]) || 0
+                    : 0;
             return {
+                id: h.id,
                 symbol: h.symbol,
                 price: priceBySymbol[h.symbol] ?? null,
-                shares: sharesAmount,
-                value: sharesAmount * currentPrice,
+                shares,
+                value: shares * price,
                 targetPercent: Number(h.targetPercent) || 0,
             };
         });
-    }, [portfolioHoldings, priceBySymbol]);
+    }, [holdings, priceBySymbol]);
 
-    const totalValue = useMemo(() => {
-        return holdings.reduce((sum, holding) => sum + holding.value, 0);
-    }, [holdings]);
+    const totalValue = useMemo(
+        () => enrichedHoldings.reduce((sum, h) => sum + h.value, 0),
+        [enrichedHoldings],
+    );
 
     const tableRows = useMemo(() => {
-        const totalPortfolioValue = totalValue;
-        const currentAllocationRows = holdings.map((holding) => {
-            const currentPercent =
-                totalPortfolioValue > 0
-                    ? (holding.value / totalPortfolioValue) * 100
-                    : 0;
-
-            const targetPercent = holding.targetPercent;
-            const diffPercent = targetPercent - currentPercent;
-
-            return {
-                ...holding,
-                currentPercent,
-                targetPercent,
-                diffPercent,
-            };
-        });
-
         const usableLeftover = amountLeft > 0 ? amountLeft : 0;
-
-        const positiveDiffs = currentAllocationRows.map((row) =>
-            row.diffPercent > 0 ? row.diffPercent : 0,
+        const rows = enrichedHoldings.map((h) => {
+            const currentPercent =
+                totalValue > 0 ? (h.value / totalValue) * 100 : 0;
+            const diffPercent = h.targetPercent - currentPercent;
+            return { ...h, currentPercent, diffPercent };
+        });
+        const positiveDiffs = rows.map((r) =>
+            r.diffPercent > 0 ? r.diffPercent : 0,
         );
         const sumPositiveDiffs = positiveDiffs.reduce((a, b) => a + b, 0);
-
-        return currentAllocationRows.map((row, index) => {
-            const suggestedAmount =
+        return rows.map((row, i) => ({
+            ...row,
+            suggestedAmount:
                 sumPositiveDiffs === 0
                     ? 0
-                    : (usableLeftover * positiveDiffs[index]) /
-                      sumPositiveDiffs;
-
-            return {
-                ...row,
-                suggestedAmount,
-            };
-        });
-    }, [holdings, totalValue, amountLeft]);
+                    : (usableLeftover * positiveDiffs[i]) / sumPositiveDiffs,
+        }));
+    }, [enrichedHoldings, totalValue, amountLeft]);
 
     const formattedLastUpdated = useMemo(() => {
         if (!lastUpdated) return null;
@@ -239,133 +138,248 @@ export default function Home() {
         });
     }, [lastUpdated]);
 
+    const expenseBreakdown = [
+        { label: "Rent", value: rentPerPaycheck },
+        { label: "Grocery", value: groceryPerPaycheck },
+        { label: "Vehicle", value: vehiclePerPaycheck },
+        { label: "Parking", value: parkingPerPaycheck },
+        { label: "Other A", value: otherSpendingAPerPaycheck },
+        { label: "Other B", value: otherSpendingBPerPaycheck },
+    ].filter((e) => e.value > 0);
+
     return (
-        <main className="page-container">
-            <div className="page-header">
-                <h1>FIRE Tracker</h1>
-                <Link href="/input" className="btn btn-secondary">
-                    Budget &amp; Portfolio Setup
-                </Link>
-            </div>
+        <div className="min-h-screen bg-surface overflow-x-hidden">
+            <AppHeader navLabel="Budget & Portfolio Setup" navHref="/input" />
 
-            <div className="button-group">
-                <button
-                    onClick={() => loadPrices(false)}
-                    className="btn btn-primary"
-                >
-                    Load prices (use 1-week cache)
-                </button>
-                <button
-                    onClick={() => loadPrices(true)}
-                    className="btn btn-primary"
-                >
-                    Force refresh
-                </button>
-            </div>
+            <main id="main-content" tabIndex={-1}>
+                <h1 className="sr-only">FIRE Tracker — Dashboard</h1>
 
-            <h2>Portfolio Summary</h2>
-            <div className="portfolio-summary">
-                <div className="portfolio-summary-row">
-                    <span className="summary-label">Total Portfolio Value</span>
-                    <span>
-                        <strong>${totalValue.toFixed(2)}</strong>
-                    </span>
-                </div>
-                <div className="portfolio-summary-row">
-                    <span className="summary-label">Current Allocation</span>
-                    <div className="allocation-list">
-                        {tableRows.map((row) => {
-                            const isOnTrack = Math.abs(row.diffPercent) < 0.01;
-                            const statusLabel = isOnTrack
-                                ? "On track"
-                                : row.diffPercent > 0
-                                  ? `Off track — ${row.diffPercent.toFixed(2)}% under target`
-                                  : `Off track — ${Math.abs(row.diffPercent).toFixed(2)}% over target`;
-                            return (
-                                <div
-                                    key={row.symbol}
-                                    className="allocation-item"
-                                >
-                                    <span className="allocation-symbol">
-                                        {row.symbol}
-                                    </span>
-                                    <span className="allocation-percent">
-                                        {row.currentPercent.toFixed(2)}%
-                                    </span>
-                                    <span
-                                        className={`allocation-status ${
-                                            isOnTrack
-                                                ? "status-on-track"
-                                                : "status-off-track"
-                                        }`}
-                                    >
-                                        {statusLabel}
-                                    </span>
-                                </div>
-                            );
-                        })}
+                <div className="flex flex-col gap-6 px-6 py-6 max-w-5xl mx-auto">
+                    <div className="flex gap-3 lg:hidden" role="group" aria-label="Price controls">
+                        <button
+                            onClick={() => loadPrices(false)}
+                            disabled={loading}
+                            aria-busy={loading}
+                            className="btn-primary h-9 text-sm"
+                        >
+                            {loading ? "Loading…" : "Load prices (use 1-week cache)"}
+                        </button>
+                        <button
+                            onClick={() => loadPrices(true)}
+                            disabled={loading}
+                            aria-busy={loading}
+                            className="btn-secondary h-9 text-sm"
+                        >
+                            Refresh Prices
+                        </button>
                     </div>
-                </div>
-                <div className="portfolio-summary-row">
-                    <span className="summary-label">Last Price Update</span>
-                    <span>{formattedLastUpdated ?? "Not yet loaded"}</span>
-                </div>
-            </div>
 
-            <h2>Current Paycheck Snapshot</h2>
-            <p className="summary-text">
-                Paycheck <strong>${(Number(payAmount) || 0).toFixed(2)}</strong>
-                {" | "}Rent <strong>${rentPerPaycheck.toFixed(2)}</strong>
-                {" | "}Total Expenses{" "}
-                <strong>${totalExpensesPerPaycheck.toFixed(2)}</strong>
-                {" | "}Amount Left <strong>${amountLeft.toFixed(2)}</strong>
-            </p>
+                    <div aria-live="polite" aria-atomic="true" className="sr-only">
+                        {loading && "Loading stock prices…"}
+                        {!loading && formattedLastUpdated && `Prices updated ${formattedLastUpdated}`}
+                    </div>
 
-            <h2>Suggested Contribution Table</h2>
-            <table className="data-table">
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Price</th>
-                        <th>Shares</th>
-                        <th>Value</th>
-                        <th>Current %</th>
-                        <th>Target %</th>
-                        <th>Diff</th>
-                        <th>Suggested $</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {tableRows.map((row) => (
-                        <tr key={row.symbol}>
-                            <td>{row.symbol}</td>
-                            <td>
-                                {row.price == null
-                                    ? "-"
-                                    : `$${Number(row.price).toFixed(2)}`}
-                            </td>
-                            <td>{row.shares}</td>
-                            <td>${row.value.toFixed(2)}</td>
-                            <td>{row.currentPercent.toFixed(2)}%</td>
-                            <td>{row.targetPercent.toFixed(2)}%</td>
-                            <td>
-                                {row.diffPercent >= 0 ? "+" : ""}
-                                {row.diffPercent.toFixed(2)}%
-                            </td>
-                            <td>${row.suggestedAmount.toFixed(2)}</td>
-                        </tr>
-                    ))}
-                    <tr>
-                        <td colSpan="3">
-                            <strong>Total</strong>
-                        </td>
-                        <td>
-                            <strong>${totalValue.toFixed(2)}</strong>
-                        </td>
-                        <td colSpan="4"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </main>
+                    {error && (
+                        <p role="alert" className="text-sm text-danger bg-danger/10 border border-danger/20 rounded-lg px-4 py-3">
+                            {error}
+                        </p>
+                    )}
+
+                    <section className="flex flex-col gap-4" aria-label="Portfolio Summary">
+                        <SectionHeader title="Portfolio Summary" />
+                        <div className="bg-white rounded-xl border border-card-border shadow-sm overflow-hidden lg:flex">
+                            <div className="p-6 lg:flex-1">
+                                <p className="text-muted text-sm mb-1">Total Portfolio Value</p>
+                                <p className="text-3xl font-semibold text-gradient-primary">
+                                    ${totalValue.toFixed(2)}
+                                </p>
+                            </div>
+
+                            <hr className="border-[#E5E7EB] mx-6 lg:hidden" aria-hidden="true" />
+                            <div className="hidden lg:block w-px bg-[#E5E7EB] my-6 shrink-0" aria-hidden="true" />
+
+                            <div className="p-6 lg:flex-1">
+                                <p className="text-muted text-sm mb-3">Current Allocation</p>
+                                <div className="flex flex-col gap-3">
+                                    {tableRows.map((row) => {
+                                        const isOnTrack = Math.abs(row.diffPercent) < 0.01;
+                                        const statusText = isOnTrack
+                                            ? "On track"
+                                            : row.diffPercent > 0
+                                              ? `Off track — ${row.diffPercent.toFixed(2)}% under target`
+                                              : `Off track — ${Math.abs(row.diffPercent).toFixed(2)}% over target`;
+                                        return (
+                                            <div key={row.id} className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:gap-2 min-w-0">
+                                                <p className="text-primary font-extrabold text-base lg:text-sm lg:w-12 lg:shrink-0">
+                                                    {row.symbol}
+                                                </p>
+                                                <p className="text-dark font-semibold text-sm lg:w-16 lg:shrink-0">
+                                                    {row.currentPercent.toFixed(2)}%
+                                                </p>
+                                                <p className={`text-sm min-w-0 break-words ${isOnTrack ? "text-teal" : "text-danger"}`}>
+                                                    {statusText}
+                                                </p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <hr className="border-[#E5E7EB] mx-6 lg:hidden" aria-hidden="true" />
+                            <div className="hidden lg:block w-px bg-[#E5E7EB] my-6 shrink-0" aria-hidden="true" />
+
+                            <div className="p-6 lg:flex-1 flex flex-col gap-3">
+                                <div>
+                                    <p className="text-muted text-sm mb-1">Last Price Update</p>
+                                    <p className="text-dark font-semibold text-sm">
+                                        {formattedLastUpdated ?? "Not yet loaded"}
+                                    </p>
+                                </div>
+                                <div className="hidden lg:flex flex-col gap-2 items-start">
+                                    <button
+                                        onClick={() => loadPrices(false)}
+                                        disabled={loading}
+                                        aria-busy={loading}
+                                        className="btn-primary h-9 text-sm"
+                                    >
+                                        {loading ? "Loading…" : "Load prices (use 1-week cache)"}
+                                    </button>
+                                    <button
+                                        onClick={() => loadPrices(true)}
+                                        disabled={loading}
+                                        aria-busy={loading}
+                                        className="btn-secondary h-9 text-sm"
+                                    >
+                                        Refresh Prices
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="flex flex-col gap-4" aria-label="Current Paycheck Snapshot">
+                        <SectionHeader
+                            title="Current Paycheck Snapshot"
+                            tooltip="Each expense is annualized then divided by your paycheck frequency (e.g. $700/mo rent ÷ 26 bi-weekly checks = $323.08/check.)"
+                        />
+                        <div className="bg-white rounded-xl border border-card-border shadow-sm p-6 flex flex-col gap-4">
+                            <div className="flex flex-col gap-1 md:hidden">
+                                <p className="text-muted text-sm">Total Leftover</p>
+                                <p className={`text-2xl font-semibold ${amountLeft >= 0 ? "text-teal" : "text-danger"}`}>
+                                    ${amountLeft.toFixed(2)}
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="min-w-0">
+                                    <p className="text-muted text-sm">Paycheck</p>
+                                    <p className="text-primary font-semibold text-base sm:text-lg break-words">
+                                        ${(Number(payAmount) || 0).toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-muted text-sm">Total Expenses</p>
+                                    <p className="text-dark font-semibold text-base sm:text-lg break-words">
+                                        ${totalExpensesPerPaycheck.toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="hidden md:block min-w-0">
+                                    <p className="text-muted text-sm">Total Leftover</p>
+                                    <p className={`text-base sm:text-lg font-semibold break-words ${amountLeft >= 0 ? "text-teal" : "text-danger"}`}>
+                                        ${amountLeft.toFixed(2)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {expenseBreakdown.length > 0 && (
+                                <div className="pt-4 border-t border-card-border">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2">
+                                        {expenseBreakdown.map((e) => (
+                                            <p key={e.label} className="text-sm text-muted">
+                                                {e.label}:{" "}
+                                                <span className="font-semibold text-dark">
+                                                    ${e.value.toFixed(2)}
+                                                </span>
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="flex flex-col gap-4" aria-label="Suggested Contribution Table">
+                        <SectionHeader title="Suggested Contribution Table" />
+
+                        {prices ? (
+                            <p className="text-xs text-muted">
+                                Stock prices are cached. Click &ldquo;Refresh Prices&rdquo; to update.
+                            </p>
+                        ) : (
+                            <p className="text-xs text-muted">
+                                Load prices to see suggested contributions.
+                            </p>
+                        )}
+
+                        <div className="flex flex-col gap-4 md:hidden">
+                            {tableRows.map((row) => (
+                                <ContributionCard key={row.id} {...row} />
+                            ))}
+                        </div>
+
+                        <div className="hidden md:block bg-white rounded-xl border border-card-border shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm" aria-label="Suggested contribution amounts by holding">
+                                    <thead>
+                                        <tr style={{ backgroundImage: "var(--gradient-primary)" }}>
+                                            {["Symbol", "Price", "Shares", "Value", "Current %", "Target %", "Diff", "Suggested $"].map((h) => (
+                                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white whitespace-nowrap">
+                                                    {h}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-card-border">
+                                        {tableRows.map((row) => (
+                                            <tr key={row.id} className="hover:bg-surface transition-colors">
+                                                <td className="px-4 py-3 font-bold text-primary">{row.symbol}</td>
+                                                <td className="px-4 py-3 text-dark">
+                                                    {row.price == null ? "—" : `$${Number(row.price).toFixed(2)}`}
+                                                </td>
+                                                <td className="px-4 py-3 text-dark">{row.shares}</td>
+                                                <td className="px-4 py-3 text-dark">${row.value.toFixed(2)}</td>
+                                                <td className="px-4 py-3 font-semibold text-primary">
+                                                    {row.currentPercent.toFixed(2)}%
+                                                </td>
+                                                <td className="px-4 py-3 text-dark">
+                                                    {row.targetPercent.toFixed(2)}%
+                                                </td>
+                                                <td className={`px-4 py-3 font-semibold ${row.diffPercent >= 0 ? "text-teal" : "text-danger"}`}>
+                                                    {row.diffPercent >= 0 ? "+" : ""}
+                                                    {row.diffPercent.toFixed(2)}%
+                                                </td>
+                                                <td className="px-4 py-3 font-semibold text-teal">
+                                                    ${row.suggestedAmount.toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        <tr className="border-t-2 border-card-border bg-surface">
+                                            <td colSpan={3} className="px-4 py-3 font-semibold text-dark">Total</td>
+                                            <td className="px-4 py-3 font-semibold text-dark">${totalValue.toFixed(2)}</td>
+                                            <td colSpan={4} />
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center bg-white rounded-xl border border-card-border shadow-sm px-6 py-4 md:hidden">
+                            <p className="font-semibold text-dark text-sm">Total Portfolio Value</p>
+                            <p className="font-semibold text-dark text-sm">${totalValue.toFixed(2)}</p>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
     );
 }

@@ -1,433 +1,288 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { AppHeader } from "@/components/AppHeader";
+import { SectionHeader } from "@/components/SectionHeader";
+import { FormField } from "@/components/FormField";
+import { HoldingCard } from "@/components/HoldingCard";
+import { useFireData } from "@/hooks/useFireData";
+import { annualAmount } from "@/lib/calculations";
 
-const DEFAULT_HOLDINGS = [
-    { id: "1", symbol: "VTI", shares: "10", targetPercent: "50" },
-    { id: "2", symbol: "QQQ", shares: "5", targetPercent: "30" },
-    { id: "3", symbol: "VXUS", shares: "8", targetPercent: "20" },
+const FREQ_PAY = [
+    { value: "weekly", label: "Weekly" },
+    { value: "biweekly", label: "Bi-weekly" },
+    { value: "monthly", label: "Monthly" },
+    { value: "annually", label: "Annually" },
 ];
 
-function paychecksPerYear(frequency) {
-    if (frequency === "weekly") return 52;
-    if (frequency === "biweekly") return 26;
-    if (frequency === "monthly") return 12;
-    return 1;
-}
+const FREQ_RENT = [
+    { value: "weekly", label: "Weekly" },
+    { value: "monthly", label: "Monthly" },
+    { value: "annually", label: "Annually" },
+];
 
-function expensePerPaycheck(amount, expenseFrequency, paycheckFrequency) {
-    const amt = Number(amount) || 0;
-    const paychecks = paychecksPerYear(paycheckFrequency);
-    let annual;
-    if (expenseFrequency === "weekly") annual = amt * 52;
-    else if (expenseFrequency === "biweekly") annual = amt * 26;
-    else if (expenseFrequency === "monthly") annual = amt * 12;
-    else if (expenseFrequency === "biannually") annual = amt * 2;
-    else if (expenseFrequency === "annually") annual = amt;
-    else annual = amt * 12;
-    return annual / paychecks;
-}
+const FREQ_GROCERY = [
+    { value: "weekly", label: "Weekly" },
+    { value: "biweekly", label: "Bi-weekly" },
+    { value: "monthly", label: "Monthly" },
+];
+
+const FREQ_VEHICLE = [
+    { value: "monthly", label: "Monthly" },
+    { value: "biannually", label: "Every 6 months" },
+    { value: "annually", label: "Annually" },
+];
+
+const FREQ_PARKING = [
+    { value: "monthly", label: "Monthly" },
+    { value: "annually", label: "Annually" },
+];
 
 export default function InputPage() {
     const router = useRouter();
-
-    // Paycheck
-    const [payAmount, setPayAmount] = useState("2000");
-    const [payFrequency, setPayFrequency] = useState("biweekly");
-
-    // Expenses
-    const [rentAmount, setRentAmount] = useState("700");
-    const [rentFrequency, setRentFrequency] = useState("monthly");
-    const [groceryAmount, setGroceryAmount] = useState("0");
-    const [groceryFrequency, setGroceryFrequency] = useState("monthly");
-    const [vehicleAmount, setVehicleAmount] = useState("0");
-    const [vehicleFrequency, setVehicleFrequency] = useState("monthly");
-    const [parkingAmount, setParkingAmount] = useState("0");
-    const [parkingFrequency, setParkingFrequency] = useState("monthly");
-    const [otherSpendingAAmount, setOtherSpendingAAmount] = useState("0");
-    const [otherSpendingAFrequency, setOtherSpendingAFrequency] =
-        useState("monthly");
-    const [otherSpendingBAmount, setOtherSpendingBAmount] = useState("0");
-    const [otherSpendingBFrequency, setOtherSpendingBFrequency] =
-        useState("monthly");
-
-    // Portfolio holdings
-    const [holdings, setHoldings] = useState(DEFAULT_HOLDINGS);
-
-    useEffect(() => {
-        const savedInputs = localStorage.getItem("fire_inputs");
-
-        if (savedInputs) {
-            const data = JSON.parse(savedInputs);
-
-            setPayAmount(data.payAmount ?? "2000");
-            setPayFrequency(data.payFrequency ?? "biweekly");
-            setRentAmount(data.rentAmount ?? "700");
-            setRentFrequency(data.rentFrequency ?? "monthly");
-            setGroceryAmount(data.groceryAmount ?? "0");
-            setGroceryFrequency(data.groceryFrequency ?? "monthly");
-            setVehicleAmount(data.vehicleAmount ?? "0");
-            setVehicleFrequency(data.vehicleFrequency ?? "monthly");
-            setParkingAmount(data.parkingAmount ?? "0");
-            setParkingFrequency(data.parkingFrequency ?? "monthly");
-            setOtherSpendingAAmount(data.otherSpendingAAmount ?? "0");
-            setOtherSpendingAFrequency(
-                data.otherSpendingAFrequency ?? "monthly",
-            );
-            setOtherSpendingBAmount(data.otherSpendingBAmount ?? "0");
-            setOtherSpendingBFrequency(
-                data.otherSpendingBFrequency ?? "monthly",
-            );
-
-            if (data.holdings && data.holdings.length > 0) {
-                setHoldings(data.holdings);
-            }
-        }
-    }, []);
-
-    const totalExpensesPerPaycheck = useMemo(() => {
-        return (
-            expensePerPaycheck(rentAmount, rentFrequency, payFrequency) +
-            expensePerPaycheck(groceryAmount, groceryFrequency, payFrequency) +
-            expensePerPaycheck(vehicleAmount, vehicleFrequency, payFrequency) +
-            expensePerPaycheck(parkingAmount, parkingFrequency, payFrequency) +
-            expensePerPaycheck(
-                otherSpendingAAmount,
-                otherSpendingAFrequency,
-                payFrequency,
-            ) +
-            expensePerPaycheck(
-                otherSpendingBAmount,
-                otherSpendingBFrequency,
-                payFrequency,
-            )
-        );
-    }, [
-        rentAmount,
-        rentFrequency,
-        groceryAmount,
-        groceryFrequency,
-        vehicleAmount,
-        vehicleFrequency,
-        parkingAmount,
-        parkingFrequency,
-        otherSpendingAAmount,
-        otherSpendingAFrequency,
-        otherSpendingBAmount,
-        otherSpendingBFrequency,
-        payFrequency,
-    ]);
-
-    const amountLeft = useMemo(() => {
-        const payNumber = Number(payAmount) || 0;
-        return payNumber - totalExpensesPerPaycheck;
-    }, [payAmount, totalExpensesPerPaycheck]);
-
-    const totalTargetPercent = useMemo(() => {
-        return holdings.reduce(
-            (sum, h) => sum + (Number(h.targetPercent) || 0),
-            0,
-        );
-    }, [holdings]);
-
-    function addHolding() {
-        setHoldings([
-            ...holdings,
-            {
-                id: Date.now().toString(),
-                symbol: "",
-                shares: "0",
-                targetPercent: "0",
-            },
-        ]);
-    }
-
-    function removeHolding(id) {
-        setHoldings(holdings.filter((h) => h.id !== id));
-    }
-
-    function updateHolding(id, field, value) {
-        setHoldings(
-            holdings.map((h) => (h.id === id ? { ...h, [field]: value } : h)),
-        );
-    }
+    const {
+        payAmount, setPayAmount, payFrequency, setPayFrequency,
+        rentAmount, setRentAmount, rentFrequency, setRentFrequency,
+        groceryAmount, setGroceryAmount, groceryFrequency, setGroceryFrequency,
+        vehicleAmount, setVehicleAmount, vehicleFrequency, setVehicleFrequency,
+        parkingAmount, setParkingAmount, parkingFrequency, setParkingFrequency,
+        otherSpendingAAmount, setOtherSpendingAAmount, otherSpendingAFrequency, setOtherSpendingAFrequency,
+        otherSpendingBAmount, setOtherSpendingBAmount, otherSpendingBFrequency, setOtherSpendingBFrequency,
+        holdings, addHolding, removeHolding, updateHolding,
+        totalExpensesPerPaycheck,
+        amountLeft,
+        totalTargetPercent,
+        saveToStorage,
+    } = useFireData();
 
     function handleSave() {
-        localStorage.setItem(
-            "fire_inputs",
-            JSON.stringify({
-                payAmount,
-                payFrequency,
-                rentAmount,
-                rentFrequency,
-                groceryAmount,
-                groceryFrequency,
-                vehicleAmount,
-                vehicleFrequency,
-                parkingAmount,
-                parkingFrequency,
-                otherSpendingAAmount,
-                otherSpendingAFrequency,
-                otherSpendingBAmount,
-                otherSpendingBFrequency,
-                holdings,
-                savedAt: Date.now(),
-            }),
-        );
-
+        saveToStorage();
         router.push("/");
     }
 
     return (
-        <main className="page-container">
-            <div className="page-header">
-                <h1>Budget &amp; Portfolio Setup</h1>
-                <button
-                    onClick={() => router.push("/")}
-                    className="btn btn-secondary"
-                >
-                    Back to Dashboard
-                </button>
+        <div className="min-h-screen bg-surface overflow-x-hidden">
+            <AppHeader navLabel="Dashboard" navHref="/" />
+
+            <main id="main-content" tabIndex={-1}>
+            <div className="flex flex-col gap-6 px-6 py-6 max-w-5xl mx-auto">
+                <h1 className="text-2xl font-semibold text-dark">
+                    Budget &amp; Portfolio Setup
+                </h1>
+
+                <section className="flex flex-col gap-4" aria-label="Income and Expenses">
+                    <SectionHeader title="Income & Expenses" />
+
+                    <div className="bg-white rounded-xl border border-card-border shadow-sm p-6 flex flex-col gap-6">
+                        <FormField
+                            label="Paycheck Amount"
+                            value={payAmount}
+                            onChange={(e) => setPayAmount(e.target.value)}
+                            frequency={payFrequency}
+                            onFrequencyChange={(e) => setPayFrequency(e.target.value)}
+                            frequencyOptions={FREQ_PAY}
+                            annualAmount={annualAmount(payAmount, payFrequency)}
+                        />
+                        <FormField
+                            label="Rent"
+                            value={rentAmount}
+                            onChange={(e) => setRentAmount(e.target.value)}
+                            frequency={rentFrequency}
+                            onFrequencyChange={(e) => setRentFrequency(e.target.value)}
+                            frequencyOptions={FREQ_RENT}
+                            annualAmount={annualAmount(rentAmount, rentFrequency)}
+                        />
+                        <FormField
+                            label="Grocery / Food"
+                            value={groceryAmount}
+                            onChange={(e) => setGroceryAmount(e.target.value)}
+                            frequency={groceryFrequency}
+                            onFrequencyChange={(e) => setGroceryFrequency(e.target.value)}
+                            frequencyOptions={FREQ_GROCERY}
+                            annualAmount={annualAmount(groceryAmount, groceryFrequency)}
+                        />
+                        <FormField
+                            label="Vehicle (gas & insurance)"
+                            value={vehicleAmount}
+                            onChange={(e) => setVehicleAmount(e.target.value)}
+                            frequency={vehicleFrequency}
+                            onFrequencyChange={(e) => setVehicleFrequency(e.target.value)}
+                            frequencyOptions={FREQ_VEHICLE}
+                            annualAmount={annualAmount(vehicleAmount, vehicleFrequency)}
+                        />
+                        <FormField
+                            label="Parking"
+                            value={parkingAmount}
+                            onChange={(e) => setParkingAmount(e.target.value)}
+                            frequency={parkingFrequency}
+                            onFrequencyChange={(e) => setParkingFrequency(e.target.value)}
+                            frequencyOptions={FREQ_PARKING}
+                            annualAmount={annualAmount(parkingAmount, parkingFrequency)}
+                        />
+                        <FormField
+                            label="Other Spending A"
+                            value={otherSpendingAAmount}
+                            onChange={(e) => setOtherSpendingAAmount(e.target.value)}
+                            frequency={otherSpendingAFrequency}
+                            onFrequencyChange={(e) => setOtherSpendingAFrequency(e.target.value)}
+                            frequencyOptions={FREQ_PAY}
+                            annualAmount={annualAmount(otherSpendingAAmount, otherSpendingAFrequency)}
+                        />
+                        <FormField
+                            label="Other Spending B"
+                            value={otherSpendingBAmount}
+                            onChange={(e) => setOtherSpendingBAmount(e.target.value)}
+                            frequency={otherSpendingBFrequency}
+                            onFrequencyChange={(e) => setOtherSpendingBFrequency(e.target.value)}
+                            frequencyOptions={FREQ_PAY}
+                            annualAmount={annualAmount(otherSpendingBAmount, otherSpendingBFrequency)}
+                        />
+
+                        <div className="pt-4 border-t border-card-border grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1">
+                                <p className="text-sm text-muted">Total Expenses</p>
+                                <p className="text-xl font-semibold text-dark">
+                                    ${totalExpensesPerPaycheck.toFixed(2)}
+                                </p>
+                                <p className="text-xs text-muted">per paycheck</p>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <p className="text-sm text-muted">Total Leftover for Investment</p>
+                                <p className={`text-xl font-semibold ${amountLeft >= 0 ? "text-teal" : "text-danger"}`}>
+                                    ${amountLeft.toFixed(2)}
+                                </p>
+                                <p className="text-xs text-muted">per paycheck</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="flex flex-col gap-4" aria-label="Portfolio Holdings">
+                    <SectionHeader title="Portfolio Holdings" />
+
+                    <div className="flex flex-col gap-4 md:hidden">
+                        {holdings.map((holding) => (
+                            <HoldingCard
+                                key={holding.id}
+                                holding={holding}
+                                onUpdate={updateHolding}
+                                onRemove={removeHolding}
+                                showRemove={holdings.length > 1}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="hidden md:block bg-white rounded-xl border border-card-border shadow-sm overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr style={{ backgroundImage: "var(--gradient-primary)" }}>
+                                    {["Symbol", "Number of Shares", "Target Allocation %", ""].map((h) => (
+                                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-card-border">
+                                {holdings.map((holding) => (
+                                    <tr key={holding.id}>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. VTI"
+                                                aria-label={`Stock symbol, row ${holdings.indexOf(holding) + 1}`}
+                                                value={holding.symbol}
+                                                onChange={(e) => updateHolding(holding.id, "symbol", e.target.value.toUpperCase())}
+                                                className="h-9 w-full rounded-lg border-2 border-card-border px-3 text-sm text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="number"
+                                                placeholder="0"
+                                                aria-label={`Number of shares for ${holding.symbol || `holding ${holdings.indexOf(holding) + 1}`}`}
+                                                value={holding.shares}
+                                                onChange={(e) => updateHolding(holding.id, "shares", e.target.value)}
+                                                className="h-9 w-full rounded-lg border-2 border-card-border px-3 text-sm text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="number"
+                                                placeholder="0"
+                                                aria-label={`Target allocation percentage for ${holding.symbol || `holding ${holdings.indexOf(holding) + 1}`}`}
+                                                value={holding.targetPercent}
+                                                onChange={(e) => updateHolding(holding.id, "targetPercent", e.target.value)}
+                                                className="h-9 w-full rounded-lg border-2 border-card-border px-3 text-sm text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 w-24">
+                                            {holdings.length > 1 && (
+                                                <button
+                                                    onClick={() => removeHolding(holding.id)}
+                                                    aria-label={`Remove ${holding.symbol || "holding"}`}
+                                                    className="h-9 px-4 rounded-lg border-2 border-card-border text-sm font-semibold text-dark hover:border-danger hover:text-danger hover:bg-danger/5 transition-colors whitespace-nowrap focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2"
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div className="flex items-center justify-between px-4 py-3 border-t border-card-border gap-4">
+                            <button
+                                onClick={addHolding}
+                                className="h-9 px-6 rounded-lg border-2 border-card-border text-sm font-semibold text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                            >
+                                + Add Holding
+                            </button>
+                            <p className={`text-sm font-semibold ${Math.abs(totalTargetPercent - 100) < 0.01 ? "text-teal" : "text-danger"}`}>
+                                Total target allocation: {totalTargetPercent.toFixed(1)}%
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="md:hidden flex flex-col gap-2">
+                        <button
+                            onClick={addHolding}
+                            className="w-full h-11 rounded-lg border-2 border-card-border text-sm font-semibold text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        >
+                            + Add Holding
+                        </button>
+                        <p className={`text-sm font-semibold ${Math.abs(totalTargetPercent - 100) < 0.01 ? "text-teal" : "text-danger"}`}>
+                            Total target allocation: {totalTargetPercent.toFixed(1)}%
+                        </p>
+                    </div>
+                </section>
+
+                <div className="flex flex-col gap-3 pb-8">
+                    <div className="flex flex-col gap-2 md:hidden">
+                        <button
+                            onClick={handleSave}
+                            className="btn-primary w-full h-12 text-base"
+                        >
+                            Save &amp; Return to Dashboard
+                        </button>
+                        <p className="text-sm text-muted text-center">
+                            <i className="fa-solid fa-hard-drive mr-1.5" aria-hidden="true"></i>Changes auto-save to local storage
+                        </p>
+                    </div>
+                    <div className="hidden md:flex md:items-center md:justify-between gap-3">
+                        <p className="text-sm text-muted">
+                            <i className="fa-solid fa-hard-drive mr-1.5" aria-hidden="true"></i>Changes auto-save to local storage
+                        </p>
+                        <button
+                            onClick={handleSave}
+                            className="btn-primary h-12 px-8 text-base"
+                        >
+                            Save &amp; Return to Dashboard
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            <h2>Paycheck &amp; Expenses</h2>
-
-            <div className="form-group">
-                <label>Paycheck Amount</label>
-                <input
-                    className="input-field ml-6"
-                    value={payAmount}
-                    placeholder="2000"
-                    onChange={(e) => setPayAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={payFrequency}
-                    onChange={(e) => setPayFrequency(e.target.value)}
-                >
-                    <option value="weekly">weekly</option>
-                    <option value="biweekly">biweekly</option>
-                    <option value="monthly">monthly</option>
-                    <option value="annually">annually</option>
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label>Rent</label>
-                <input
-                    className="input-field ml-6"
-                    value={rentAmount}
-                    placeholder="700"
-                    onChange={(e) => setRentAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={rentFrequency}
-                    onChange={(e) => setRentFrequency(e.target.value)}
-                >
-                    <option value="weekly">weekly</option>
-                    <option value="monthly">monthly</option>
-                    <option value="annually">annually</option>
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label>Grocery / Food</label>
-                <input
-                    className="input-field ml-6"
-                    value={groceryAmount}
-                    placeholder="0"
-                    onChange={(e) => setGroceryAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={groceryFrequency}
-                    onChange={(e) => setGroceryFrequency(e.target.value)}
-                >
-                    <option value="weekly">weekly</option>
-                    <option value="biweekly">biweekly</option>
-                    <option value="monthly">monthly</option>
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label>
-                    Vehicle Expenses{" "}
-                    <span className="label-hint">(gas &amp; insurance)</span>
-                </label>
-                <input
-                    className="input-field ml-6"
-                    value={vehicleAmount}
-                    placeholder="0"
-                    onChange={(e) => setVehicleAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={vehicleFrequency}
-                    onChange={(e) => setVehicleFrequency(e.target.value)}
-                >
-                    <option value="monthly">monthly</option>
-                    <option value="biannually">
-                        biannually (every 6 months)
-                    </option>
-                    <option value="annually">annually</option>
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label>Parking</label>
-                <input
-                    className="input-field ml-6"
-                    value={parkingAmount}
-                    placeholder="0"
-                    onChange={(e) => setParkingAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={parkingFrequency}
-                    onChange={(e) => setParkingFrequency(e.target.value)}
-                >
-                    <option value="monthly">monthly</option>
-                    <option value="annually">annually</option>
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label>Other Spending</label>
-                <input
-                    className="input-field ml-6"
-                    value={otherSpendingAAmount}
-                    placeholder="0"
-                    onChange={(e) => setOtherSpendingAAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={otherSpendingAFrequency}
-                    onChange={(e) => setOtherSpendingAFrequency(e.target.value)}
-                >
-                    <option value="weekly">weekly</option>
-                    <option value="biweekly">biweekly</option>
-                    <option value="monthly">monthly</option>
-                    <option value="annually">annually</option>
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label>Other Spending</label>
-                <input
-                    className="input-field ml-6"
-                    value={otherSpendingBAmount}
-                    placeholder="0"
-                    onChange={(e) => setOtherSpendingBAmount(e.target.value)}
-                />
-                <select
-                    className="select-field"
-                    value={otherSpendingBFrequency}
-                    onChange={(e) => setOtherSpendingBFrequency(e.target.value)}
-                >
-                    <option value="weekly">weekly</option>
-                    <option value="biweekly">biweekly</option>
-                    <option value="monthly">monthly</option>
-                    <option value="annually">annually</option>
-                </select>
-            </div>
-
-            <div className="info-section">
-                <div className="info-label">Amount Left After All Expenses</div>
-                <div className="info-value">${amountLeft.toFixed(2)}</div>
-            </div>
-
-            <h2>Portfolio Holdings</h2>
-
-            <table className="data-table mb-16">
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Number of Shares</th>
-                        <th>Target Allocation %</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {holdings.map((holding) => (
-                        <tr key={holding.id}>
-                            <td>
-                                <input
-                                    className="input-field"
-                                    value={holding.symbol}
-                                    placeholder="e.g. VTI"
-                                    onChange={(e) =>
-                                        updateHolding(
-                                            holding.id,
-                                            "symbol",
-                                            e.target.value.toUpperCase(),
-                                        )
-                                    }
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    className="input-field"
-                                    value={holding.shares}
-                                    placeholder="0"
-                                    onChange={(e) =>
-                                        updateHolding(
-                                            holding.id,
-                                            "shares",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    className="input-field"
-                                    value={holding.targetPercent}
-                                    placeholder="0"
-                                    onChange={(e) =>
-                                        updateHolding(
-                                            holding.id,
-                                            "targetPercent",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                            </td>
-                            <td>
-                                <button
-                                    onClick={() => removeHolding(holding.id)}
-                                    className="btn btn-secondary"
-                                >
-                                    Remove
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            <div className="button-group">
-                <button onClick={addHolding} className="btn btn-secondary">
-                    + Add Holding
-                </button>
-            </div>
-
-            {Math.abs(totalTargetPercent - 100) > 0.01 && (
-                <p className="allocation-warning mt-10">
-                    Target allocation adds up to{" "}
-                    <strong>{totalTargetPercent.toFixed(2)}%</strong>, not 100%.
-                    The remaining{" "}
-                    <strong>{(100 - totalTargetPercent).toFixed(2)}%</strong>{" "}
-                    will not be allocated to any investment.
-                </p>
-            )}
-
-            <div className="mt-10">
-                <button onClick={handleSave} className="btn btn-primary">
-                    Save &amp; Return to Dashboard
-                </button>
-            </div>
-        </main>
+            </main>
+        </div>
     );
 }
