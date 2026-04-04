@@ -160,7 +160,7 @@ export default function Dashboard() {
                             onClick={() => loadPrices(false)}
                             disabled={loading}
                             aria-busy={loading}
-                            className="btn-primary h-9 text-sm"
+                            className="btn-primary min-h-9 text-sm"
                         >
                             {loading ? "Loading…" : "Load prices (use 1-week cache)"}
                         </button>
@@ -168,7 +168,7 @@ export default function Dashboard() {
                             onClick={() => loadPrices(true)}
                             disabled={loading}
                             aria-busy={loading}
-                            className="btn-secondary h-9 text-sm"
+                            className="btn-secondary min-h-9 text-sm"
                         >
                             Refresh Prices
                         </button>
@@ -240,7 +240,7 @@ export default function Dashboard() {
                                         onClick={() => loadPrices(false)}
                                         disabled={loading}
                                         aria-busy={loading}
-                                        className="btn-primary h-9 text-sm"
+                                        className="btn-primary min-h-9 text-sm"
                                     >
                                         {loading ? "Loading…" : "Load prices (use 1-week cache)"}
                                     </button>
@@ -248,7 +248,7 @@ export default function Dashboard() {
                                         onClick={() => loadPrices(true)}
                                         disabled={loading}
                                         aria-busy={loading}
-                                        className="btn-secondary h-9 text-sm"
+                                        className="btn-secondary min-h-9 text-sm"
                                     >
                                         Refresh Prices
                                     </button>
