@@ -20,10 +20,10 @@ export function AppHeader({ navLabel, navHref }) {
                         height={28}
                         width={107}
                         priority
-                        className="shrink-0"
+                        className="shrink-0 block self-end"
                     />
                     <span
-                        className="text-sm sm:text-base font-semibold text-gradient-primary leading-none whitespace-nowrap"
+                        className="self-end text-sm sm:text-base font-semibold text-gradient-primary leading-none whitespace-nowrap"
                         aria-hidden="true"
                     >
                         Tracker
