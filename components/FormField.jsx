@@ -27,7 +27,7 @@ export function FormField({
                     id={inputId}
                     type="number"
                     value={value}
-                    onChange={onChange}
+                    onChange={(e) => { if (e.target.value.length <= 12) onChange(e); }}
                     placeholder="0"
                     className="flex-1 min-w-0 h-11 rounded-lg border-2 border-card-border px-3 text-base text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
                 />

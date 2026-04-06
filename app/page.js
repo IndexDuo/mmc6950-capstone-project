@@ -83,22 +83,22 @@ export default function Dashboard() {
     const priceBySymbol = useMemo(() => prices || {}, [prices]);
 
     const enrichedHoldings = useMemo(() => {
+        const pricesLoaded = prices !== null;
         return holdings.map((h) => {
+            const rawPrice = priceBySymbol[h.symbol];
             const shares = Number(h.shares) || 0;
-            const price =
-                priceBySymbol[h.symbol] != null
-                    ? Number(priceBySymbol[h.symbol]) || 0
-                    : 0;
+            const price = rawPrice != null ? Number(rawPrice) || 0 : 0;
             return {
                 id: h.id,
                 symbol: h.symbol,
-                price: priceBySymbol[h.symbol] ?? null,
+                price: rawPrice ?? null,
                 shares,
                 value: shares * price,
                 targetPercent: Number(h.targetPercent) || 0,
+                invalidSymbol: pricesLoaded && rawPrice === null,
             };
         });
-    }, [holdings, priceBySymbol]);
+    }, [holdings, priceBySymbol, prices]);
 
     const totalValue = useMemo(
         () => enrichedHoldings.reduce((sum, h) => sum + h.value, 0),
@@ -210,7 +210,7 @@ export default function Dashboard() {
                                               : `Off track — ${Math.abs(row.diffPercent).toFixed(2)}% over target`;
                                         return (
                                             <div key={row.id} className="flex flex-col gap-0.5 lg:flex-row lg:items-baseline lg:gap-2 min-w-0">
-                                                <p className="text-primary font-extrabold text-base lg:text-sm lg:w-12 lg:shrink-0">
+                                                <p className={`font-extrabold text-base lg:text-sm lg:w-20 lg:shrink-0 lg:truncate ${row.invalidSymbol ? "text-danger" : "text-primary"}`}>
                                                     {row.symbol}
                                                 </p>
                                                 <p className="text-dark font-semibold text-sm lg:w-16 lg:shrink-0">
@@ -342,7 +342,16 @@ export default function Dashboard() {
                                     <tbody className="divide-y divide-card-border">
                                         {tableRows.map((row) => (
                                             <tr key={row.id} className="hover:bg-surface transition-colors">
-                                                <td className="px-4 py-3 font-bold text-primary">{row.symbol}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`font-bold ${row.invalidSymbol ? "text-danger" : "text-primary"}`}>
+                                                        {row.symbol}
+                                                    </span>
+                                                    {row.invalidSymbol && (
+                                                        <span className="block text-[10px] text-danger font-normal leading-tight">
+                                                            Symbol not found
+                                                        </span>
+                                                    )}
+                                                </td>
                                                 <td className="px-4 py-3 text-dark">
                                                     {row.price == null ? "—" : `$${Number(row.price).toFixed(2)}`}
                                                 </td>

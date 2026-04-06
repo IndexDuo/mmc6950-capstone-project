@@ -190,9 +190,10 @@ export default function InputPage() {
                                             <input
                                                 type="text"
                                                 placeholder="e.g. VTI"
+                                                maxLength={6}
                                                 aria-label={`Stock symbol, row ${holdings.indexOf(holding) + 1}`}
                                                 value={holding.symbol}
-                                                onChange={(e) => updateHolding(holding.id, "symbol", e.target.value.toUpperCase())}
+                                                onChange={(e) => updateHolding(holding.id, "symbol", e.target.value.replace(/\s/g, "").toUpperCase().slice(0, 6))}
                                                 className="h-9 w-full rounded-lg border-2 border-card-border px-3 text-sm text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
                                             />
                                         </td>
@@ -202,7 +203,7 @@ export default function InputPage() {
                                                 placeholder="0"
                                                 aria-label={`Number of shares for ${holding.symbol || `holding ${holdings.indexOf(holding) + 1}`}`}
                                                 value={holding.shares}
-                                                onChange={(e) => updateHolding(holding.id, "shares", e.target.value)}
+                                                onChange={(e) => { if (e.target.value.length <= 12) updateHolding(holding.id, "shares", e.target.value); }}
                                                 className="h-9 w-full rounded-lg border-2 border-card-border px-3 text-sm text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
                                             />
                                         </td>
@@ -212,7 +213,7 @@ export default function InputPage() {
                                                 placeholder="0"
                                                 aria-label={`Target allocation percentage for ${holding.symbol || `holding ${holdings.indexOf(holding) + 1}`}`}
                                                 value={holding.targetPercent}
-                                                onChange={(e) => updateHolding(holding.id, "targetPercent", e.target.value)}
+                                                onChange={(e) => { if (e.target.value.length <= 12) updateHolding(holding.id, "targetPercent", e.target.value); }}
                                                 className="h-9 w-full rounded-lg border-2 border-card-border px-3 text-sm text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
                                             />
                                         </td>
@@ -266,12 +267,12 @@ export default function InputPage() {
                             Save &amp; Return to Dashboard
                         </button>
                         <p className="text-sm text-muted text-center">
-                            <i className="fa-solid fa-hard-drive mr-1.5" aria-hidden="true"></i>Changes auto-save to local storage
+                            <svg className="inline w-3.5 h-3.5 mr-1.5 align-text-bottom" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V280.4c-17-15.2-39.4-24.4-64-24.4H64c-24.6 0-47 9.2-64 24.4V96zM64 288H448c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V352c0-35.3 28.7-64 64-64zM320 408a24 24 0 1 0 0-48 24 24 0 1 0 0 48zm88-24a24 24 0 1 0 -48 0 24 24 0 1 0 48 0zM128 376c0 13.3 10.7 24 24 24H232c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24z"/></svg>Changes auto-save to local storage
                         </p>
                     </div>
                     <div className="hidden md:flex md:items-center md:justify-between gap-3">
                         <p className="text-sm text-muted">
-                            <i className="fa-solid fa-hard-drive mr-1.5" aria-hidden="true"></i>Changes auto-save to local storage
+                            <svg className="inline w-3.5 h-3.5 mr-1.5 align-text-bottom" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V280.4c-17-15.2-39.4-24.4-64-24.4H64c-24.6 0-47 9.2-64 24.4V96zM64 288H448c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V352c0-35.3 28.7-64 64-64zM320 408a24 24 0 1 0 0-48 24 24 0 1 0 0 48zm88-24a24 24 0 1 0 -48 0 24 24 0 1 0 48 0zM128 376c0 13.3 10.7 24 24 24H232c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24z"/></svg>Changes auto-save to local storage
                         </p>
                         <button
                             onClick={handleSave}

@@ -8,12 +8,13 @@ export function HoldingCard({ holding, onUpdate, onRemove, showRemove }) {
                 <input
                     type="text"
                     placeholder="e.g. VTI"
+                    maxLength={6}
                     value={holding.symbol}
                     onChange={(e) =>
                         onUpdate(
                             holding.id,
                             "symbol",
-                            e.target.value.toUpperCase(),
+                            e.target.value.replace(/\s/g, "").toUpperCase().slice(0, 6),
                         )
                     }
                     className="h-11 w-full rounded-lg border-2 border-card-border px-4 text-base text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
@@ -28,9 +29,9 @@ export function HoldingCard({ holding, onUpdate, onRemove, showRemove }) {
                         type="number"
                         placeholder="0"
                         value={holding.shares}
-                        onChange={(e) =>
-                            onUpdate(holding.id, "shares", e.target.value)
-                        }
+                        onChange={(e) => {
+                            if (e.target.value.length <= 12) onUpdate(holding.id, "shares", e.target.value);
+                        }}
                         className="h-11 w-full rounded-lg border-2 border-card-border px-4 text-base text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
                     />
                 </div>
@@ -42,13 +43,9 @@ export function HoldingCard({ holding, onUpdate, onRemove, showRemove }) {
                         type="number"
                         placeholder="0"
                         value={holding.targetPercent}
-                        onChange={(e) =>
-                            onUpdate(
-                                holding.id,
-                                "targetPercent",
-                                e.target.value,
-                            )
-                        }
+                        onChange={(e) => {
+                            if (e.target.value.length <= 12) onUpdate(holding.id, "targetPercent", e.target.value);
+                        }}
                         className="h-11 w-full rounded-lg border-2 border-card-border px-4 text-base text-dark bg-white focus-visible:border-primary focus-visible:outline-none transition-colors"
                     />
                 </div>
