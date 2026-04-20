@@ -1,6 +1,36 @@
-# Personal FIRE Tracker - Web App
+# [Personal FIRE Tracker - Web App](https://mmc6950-capstone-project-taupe.vercel.app/)
 
 A FIRE (Financial Independence, Retire Early) tracking web app that helps users manage key inputs and view their portfolio + allocation decisions in one place, instead of jumping between multiple apps.
+
+**Live Site:** [https://mmc6950-capstone-project-taupe.vercel.app/](https://mmc6950-capstone-project-taupe.vercel.app/)
+ 
+---
+ 
+## Project Purpose
+ 
+The problem this app solves is portfolio drift. When you invest a fixed amount each paycheck, different stocks/ETFs grow at different rates, and over time your actual allocation drifts away from your target. This tool fetches current stock prices, calculates your current allocation, and suggests how much to invest in each symbol to move back toward your target based on whatever is left from your paycheck after expenses.
+
+---
+
+## How to run this application locally?
+ 
+1. Clone the repository
+2. Install dependencies
+   ```
+   npm install
+   ```
+ 
+3. Create a `.env.local` file in the root directory and add your MarketStack API key:
+   ```
+   MARKETSTACK_API_KEY=your_api_key_here
+   ```
+ 
+4. Start the development server:
+   ```
+   npm run dev
+   ```
+ 
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
