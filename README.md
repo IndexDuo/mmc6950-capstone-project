@@ -5,10 +5,16 @@ A FIRE (Financial Independence, Retire Early) tracking web app that helps users 
 **Live Site:** [https://mmc6950-capstone-project-taupe.vercel.app/](https://mmc6950-capstone-project-taupe.vercel.app/)
  
 ---
+
+## Project Inspiration
  
+The idea for this project came from my own experience tracking finances toward a FIRE goal. I was constantly jumping between banking apps, investment platforms, and a separate calculator just to get a basic picture of where I stood. Most personal finance apps available were either too focused on expense tracking, missing FIRE-specific features, or had cluttered interfaces that made them frustrating to use consistently over time.
+I did not want a general budgeting app. I wanted a clean, focused tool that could tell me one thing clearly: based on my current paycheck and holdings, how much should I invest in each ETF this period to stay aligned with my target allocation? Portfolio drift caused by recurring fixed investments is what this app is built to solve.
+
+---
 ## Project Purpose
  
-The problem this app solves is portfolio drift. When you invest a fixed amount each paycheck, different stocks/ETFs grow at different rates, and over time your actual allocation drifts away from your target. This tool fetches current stock prices, calculates your current allocation, and suggests how much to invest in each symbol to move back toward your target based on whatever is left from your paycheck after expenses.
+The problem this app solves is portfolio drift. When you invest a fixed amount each paycheck, different stocks/ETFs grow at different rates, and over time, your actual allocation drifts away from your target. This tool fetches current stock prices, calculates your current allocation, and suggests how much to invest in each symbol to move back toward your target based on whatever is left from your paycheck after expenses.
 
 ---
 
@@ -33,7 +39,19 @@ The problem this app solves is portfolio drift. When you invest a fixed amount e
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
+## Technology Breakdown
 
+- **Next.js** - App framework and API routes
+- **React** - Component-based UI and state management
+- **Tailwind CSS** - Styling and responsive layout
+- **MarketStack API** - Live stock and ETF price fetching
+- **localStorage** - Client-side data persistence
+- **Font Awesome** - UI icons
+- **Vercel** - Deployment and hosting
+- **Figma** - Wireframes and mockups
+- **Adobe Illustrator** - Logo and style guide
+
+---
 ## Minimum viable product (MVP) core feature list:
 
 - [x] **1. Manual portfolio input tool**
